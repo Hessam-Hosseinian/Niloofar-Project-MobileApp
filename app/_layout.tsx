@@ -1,24 +1,48 @@
-import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
-import { Stack } from 'expo-router';
-import { StatusBar } from 'expo-status-bar';
-import 'react-native-reanimated';
+import { Stack } from "expo-router";
+import { useEffect } from "react";
+import {
+  SpaceGrotesk_400Regular,
+  SpaceGrotesk_500Medium,
+  SpaceGrotesk_600SemiBold,
+  SpaceGrotesk_700Bold,
+  useFonts,
+} from "@expo-google-fonts/space-grotesk";
 
-import { useColorScheme } from '@/hooks/use-color-scheme';
-
-export const unstable_settings = {
-  anchor: '(tabs)',
-};
+import { AuthProvider } from "@/src/auth/AuthProvider";
+import { initializeDatabase } from "@/src/db/database";
+import { useAppStore } from "@/src/store/appStore";
 
 export default function RootLayout() {
-  const colorScheme = useColorScheme();
+  const [fontsLoaded] = useFonts({
+    SpaceGrotesk_400Regular,
+    SpaceGrotesk_500Medium,
+    SpaceGrotesk_600SemiBold,
+    SpaceGrotesk_700Bold,
+  });
+
+  const isReady = useAppStore((state) => state.isReady);
+  const setReady = useAppStore((state) => state.setReady);
+
+  useEffect(() => {
+    async function prepareApp() {
+      await initializeDatabase();
+      setReady(true);
+    }
+
+    prepareApp();
+  }, [setReady]);
+
+  if (!fontsLoaded || !isReady) {
+    return null;
+  }
 
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <Stack>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
-      </Stack>
-      <StatusBar style="auto" />
-    </ThemeProvider>
+    <AuthProvider>
+      <Stack
+        screenOptions={{
+          headerShown: false,
+        }}
+      />
+    </AuthProvider>
   );
 }
