@@ -9,6 +9,7 @@ import {
   FileText,
   Folder,
   GraduationCap,
+  Heart,
   HeartPulse,
   House,
   Landmark,
@@ -207,7 +208,16 @@ export const services: ServiceItem[] = [
   // ─────────────────────────
   // Life
   // ─────────────────────────
-
+  {
+    key: "habits",
+    title: "Habits",
+    subtitle: "Build and track daily habits",
+    category: "life",
+    icon: Heart,
+    color: colors.green,
+    phase: 2,
+    enabled: true,
+  },
   {
     key: "money",
     title: "Money",

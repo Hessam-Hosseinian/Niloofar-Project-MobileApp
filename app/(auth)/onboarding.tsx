@@ -1,4 +1,4 @@
-import { StyleSheet, Text, View } from "react-native";
+import { ScrollView, StyleSheet, Text, View } from "react-native";
 
 import { router } from "expo-router";
 
@@ -20,8 +20,7 @@ export default function OnboardingScreen() {
   }
 
   return (
-    <View style={styles.screen}>
-      <View style={styles.content}>
+    <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
         <View style={styles.iconWrapper}>
           <View style={styles.iconShadow} />
 
@@ -59,8 +58,7 @@ export default function OnboardingScreen() {
             Get Started
           </Button>
         </View>
-      </View>
-    </View>
+    </ScrollView>
   );
 }
 
@@ -71,7 +69,7 @@ const styles = StyleSheet.create({
   },
 
   content: {
-    flex: 1,
+    flexGrow: 1,
 
     justifyContent: "center",
 

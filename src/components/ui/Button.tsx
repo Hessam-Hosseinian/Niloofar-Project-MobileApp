@@ -29,6 +29,7 @@ type ButtonProps = {
   loading?: boolean;
 
   onPress?: () => void;
+  accessibilityLabel?: string;
 
   leftIcon?: ReactNode;
   rightIcon?: ReactNode;
@@ -98,6 +99,7 @@ export function Button({
   disabled = false,
   loading = false,
   onPress,
+  accessibilityLabel,
   leftIcon,
   rightIcon,
   style,
@@ -122,6 +124,8 @@ export function Button({
       )}
 
       <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={accessibilityLabel}
         disabled={disabled || loading}
         onPress={onPress}
         style={({ pressed }) => [

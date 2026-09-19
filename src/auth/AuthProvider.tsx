@@ -36,9 +36,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   async function loadStoredAuth() {
     try {
-      const session = await SecureStore.getItemAsync(SESSION_KEY);
-
-      const onboarding = await SecureStore.getItemAsync(ONBOARDING_KEY);
+      const [session, onboarding] = await Promise.all([
+        SecureStore.getItemAsync(SESSION_KEY),
+        SecureStore.getItemAsync(ONBOARDING_KEY),
+      ]);
 
       setIsLoggedIn(session !== null);
 

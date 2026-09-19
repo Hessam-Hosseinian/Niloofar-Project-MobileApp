@@ -43,6 +43,7 @@ export function IconButton({
       disabled={disabled}
       loading={loading}
       style={style as ViewStyle}
+      accessibilityLabel={accessibilityLabel}
     >
       {icon}
     </Button>

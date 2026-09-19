@@ -1,12 +1,12 @@
 import { useMemo, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
-import { router } from "expo-router";
 
 import { Heart, Search } from "lucide-react-native";
 
 import { Card } from "@/src/components/ui/Card";
 import { Input } from "@/src/components/ui/Input";
 import { useFavorites } from "@/src/features/services/hooks/useFavorites";
+import { openService } from "@/src/features/services/openService";
 import {
   type ServiceCategory,
   services,
@@ -82,6 +82,8 @@ export default function ServicesScreen() {
     <ScrollView
       style={styles.screen}
       contentContainerStyle={styles.content}
+      keyboardShouldPersistTaps="handled"
+      keyboardDismissMode="on-drag"
       showsVerticalScrollIndicator={false}
     >
       <View>
@@ -113,7 +115,10 @@ export default function ServicesScreen() {
                 <View key={service.key} style={styles.favoriteWrapper}>
                   <View style={styles.favoriteShadow} />
 
-                  <View
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel={`Open ${service.title}`}
+                    onPress={() => openService(service.key)}
                     style={[
                       styles.favoriteTile,
                       { backgroundColor: service.color },
@@ -123,7 +128,12 @@ export default function ServicesScreen() {
                       <Icon size={22} color={colors.foreground} />
 
                       <Pressable
-                        onPress={() => toggle(service.key)}
+                        accessibilityRole="button"
+                        accessibilityLabel={`Remove ${service.title} from favorites`}
+                        onPress={(event) => {
+                          event.stopPropagation();
+                          void toggle(service.key);
+                        }}
                         hitSlop={10}
                       >
                         <Heart
@@ -135,7 +145,7 @@ export default function ServicesScreen() {
                     </View>
 
                     <Text style={styles.favoriteTitle}>{service.title}</Text>
-                  </View>
+                  </Pressable>
                 </View>
               );
             })}
@@ -185,20 +195,7 @@ export default function ServicesScreen() {
                 iconBackground={service.color}
                 favorite={isFavorite(service.key)}
                 onToggleFavorite={() => toggle(service.key)}
-                onPress={() => {
-                  if (service.key === "tasks") {
-                    router.push("/(app)/service/tasks");
-
-                    return;
-                  }
-
-                  router.push({
-                    pathname: "/(app)/service/[serviceKey]",
-                    params: {
-                      serviceKey: service.key,
-                    },
-                  });
-                }}
+                onPress={() => openService(service.key)}
               />
             );
           })}
@@ -327,7 +324,7 @@ const styles = StyleSheet.create({
 
   content: {
     paddingHorizontal: 20,
-    paddingTop: 64,
+    paddingTop: 24,
     paddingBottom: 32,
     gap: 28,
   },

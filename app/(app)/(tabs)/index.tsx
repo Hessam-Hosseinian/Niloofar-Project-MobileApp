@@ -1,12 +1,14 @@
-import { ScrollView, StyleSheet, Text, View } from "react-native";
+import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { router } from "expo-router";
 
 import { Bell } from "lucide-react-native";
 
 import { Card } from "@/src/components/ui/Card";
 import { IconButton } from "@/src/components/ui/IconButton";
 import { quickActions } from "@/src/features/services/serviceCatalog";
+import { openService } from "@/src/features/services/openService";
 import { colors, typography } from "@/src/theme";
-
+import QuoteCard from "@/components/QuoteCard";
 export default function HomeScreen() {
   return (
     <ScrollView
@@ -14,26 +16,29 @@ export default function HomeScreen() {
       contentContainerStyle={styles.content}
       showsVerticalScrollIndicator={false}
     >
+
       <View style={styles.header}>
         <View>
           <Text style={styles.eyebrow}>GOOD AFTERNOON</Text>
 
           <Text style={styles.title}>Welcome back 👋</Text>
+          
         </View>
 
         <IconButton
-          accessibilityLabel="Notifications"
+          accessibilityLabel="Task reminders"
           variant="outline"
           icon={<Bell size={20} strokeWidth={2.3} color={colors.foreground} />}
+          onPress={() => openService("tasks")}
         />
       </View>
+     <QuoteCard />
 
       <Card
         variant="yellow"
         title="Everything in one place"
         description="Access your most important services quickly."
       />
-
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Quick Actions</Text>
 
@@ -47,6 +52,7 @@ export default function HomeScreen() {
                 title={service.title}
                 backgroundColor={service.color}
                 icon={<Icon size={24} color={colors.foreground} />}
+                onPress={() => openService(service.key)}
               />
             );
           })}
@@ -57,7 +63,13 @@ export default function HomeScreen() {
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>Recent Activity</Text>
 
-          <Text style={styles.seeAll}>See all</Text>
+          <Pressable
+            accessibilityRole="button"
+            onPress={() => router.navigate("/(app)/(tabs)/activity")}
+            hitSlop={10}
+          >
+            <Text style={styles.seeAll}>See all</Text>
+          </Pressable>
         </View>
 
         <Card
@@ -65,6 +77,7 @@ export default function HomeScreen() {
           description="Your latest actions will appear here."
         />
       </View>
+
     </ScrollView>
   );
 }
@@ -73,18 +86,28 @@ type QuickActionProps = {
   title: string;
   icon: React.ReactNode;
   backgroundColor: string;
+  onPress: () => void;
 };
 
-function QuickAction({ title, icon, backgroundColor }: QuickActionProps) {
+function QuickAction({ title, icon, backgroundColor, onPress }: QuickActionProps) {
   return (
     <View style={styles.quickItemWrapper}>
       <View style={styles.quickShadow} />
 
-      <View style={[styles.quickItem, { backgroundColor }]}>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={title}
+        onPress={onPress}
+        style={({ pressed }) => [
+          styles.quickItem,
+          { backgroundColor },
+          pressed && styles.quickPressed,
+        ]}
+      >
         {icon}
 
         <Text style={styles.quickLabel}>{title}</Text>
-      </View>
+      </Pressable>
     </View>
   );
 }
@@ -97,7 +120,7 @@ const styles = StyleSheet.create({
 
   content: {
     paddingHorizontal: 20,
-    paddingTop: 64,
+    paddingTop: 24,
     paddingBottom: 32,
     gap: 28,
   },
@@ -174,6 +197,10 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: colors.foreground,
     borderRadius: 8,
+  },
+
+  quickPressed: {
+    transform: [{ translateX: 2 }, { translateY: 2 }],
   },
 
   quickLabel: {

@@ -27,6 +27,7 @@ export function Input({
   leftIcon,
   rightElement,
   editable = true,
+  multiline = false,
   containerStyle,
   style,
   ...props
@@ -41,7 +42,7 @@ export function Input({
         </Text>
       )}
 
-      <View style={styles.inputWrapper}>
+      <View style={[styles.inputWrapper, multiline && styles.multilineWrapper]}>
         <View
           pointerEvents="none"
           style={styles.shadow}
@@ -50,6 +51,7 @@ export function Input({
         <View
           style={[
             styles.inputSurface,
+            multiline && styles.multilineSurface,
             disabled && styles.disabledSurface,
             error && styles.errorSurface,
           ]}
@@ -63,10 +65,13 @@ export function Input({
           <TextInput
             {...props}
             editable={editable}
+            multiline={multiline}
+            textAlignVertical={multiline ? 'top' : 'center'}
             placeholderTextColor="rgba(26, 26, 26, 0.50)"
             selectionColor={colors.foreground}
             style={[
               styles.input,
+              multiline && styles.multilineInput,
 
               leftIcon ? styles.inputWithLeftIcon : undefined,
               rightElement ? styles.inputWithRightElement : undefined,
@@ -112,6 +117,10 @@ const styles = StyleSheet.create({
     position: 'relative',
   },
 
+  multilineWrapper: {
+    height: 124,
+  },
+
   shadow: {
     position: 'absolute',
 
@@ -142,6 +151,11 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
 
+  multilineSurface: {
+    height: 120,
+    alignItems: 'stretch',
+  },
+
   input: {
     flex: 1,
     height: '100%',
@@ -153,6 +167,10 @@ const styles = StyleSheet.create({
     fontSize: 16,
 
     color: colors.foreground,
+  },
+
+  multilineInput: {
+    paddingTop: 12,
   },
 
   inputWithLeftIcon: {

@@ -68,7 +68,7 @@ export function BottomTabBar({
 
           const { options } = descriptors[route.key];
 
-          const onPress = async () => {
+          const onPress = () => {
             const event = navigation.emit({
               type: "tabPress",
               target: route.key,
@@ -76,9 +76,8 @@ export function BottomTabBar({
             });
 
             if (!focused && !event.defaultPrevented) {
-              await Haptics.selectionAsync();
-
               navigation.navigate(route.name, route.params);
+              void Haptics.selectionAsync().catch(() => {});
             }
           };
 

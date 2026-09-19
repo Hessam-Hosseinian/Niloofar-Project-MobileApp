@@ -177,7 +177,7 @@ const styles = StyleSheet.create({
 
   content: {
     paddingHorizontal: 20,
-    paddingTop: 64,
+    paddingTop: 24,
     paddingBottom: 32,
     gap: 28,
   },

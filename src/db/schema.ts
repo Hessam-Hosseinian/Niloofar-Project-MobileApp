@@ -27,23 +27,17 @@ CREATE TABLE IF NOT EXISTS tasks (
   notes TEXT,
 
   due_at TEXT,
-
-  completed INTEGER NOT NULL DEFAULT 0,
-
-  created_at TEXT NOT NULL,
-  updated_at TEXT NOT NULL
-);
-
-CREATE TABLE IF NOT EXISTS tasks (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-
-  title TEXT NOT NULL,
-  notes TEXT,
-
-  due_at TEXT,
+  planned_day TEXT,
   priority TEXT NOT NULL DEFAULT 'normal',
 
+  repeat_type TEXT NOT NULL DEFAULT 'none',
+  repeat_interval INTEGER NOT NULL DEFAULT 1,
+
+  reminder_minutes INTEGER,
+  notification_id TEXT,
+
   completed INTEGER NOT NULL DEFAULT 0,
+  next_occurrence_created INTEGER NOT NULL DEFAULT 0,
 
   created_at TEXT NOT NULL,
   updated_at TEXT NOT NULL
@@ -61,5 +55,87 @@ CREATE TABLE IF NOT EXISTS subtasks (
   FOREIGN KEY (task_id)
     REFERENCES tasks(id)
     ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS focus_sessions (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+
+  task_id INTEGER NOT NULL,
+
+  started_at TEXT NOT NULL,
+  ended_at TEXT,
+
+  duration_seconds INTEGER NOT NULL DEFAULT 0,
+  completed INTEGER NOT NULL DEFAULT 0,
+
+  FOREIGN KEY (task_id)
+    REFERENCES tasks(id)
+    ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS calendar_events (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+
+  title TEXT NOT NULL,
+  description TEXT,
+
+  starts_at TEXT NOT NULL,
+  ends_at TEXT,
+
+  all_day INTEGER NOT NULL DEFAULT 0,
+
+  reminder_minutes INTEGER,
+  notification_id TEXT,
+
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS habits (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+
+  title TEXT NOT NULL,
+  color TEXT NOT NULL,
+
+  cue TEXT,
+  weekdays INTEGER NOT NULL DEFAULT 127,
+  target_count INTEGER NOT NULL DEFAULT 1,
+  unit TEXT NOT NULL DEFAULT 'times',
+  reminder_time TEXT,
+  notification_ids TEXT,
+  archived INTEGER NOT NULL DEFAULT 0,
+  start_day TEXT,
+
+  created_at TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS habit_logs (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+
+  habit_id INTEGER NOT NULL,
+  day TEXT NOT NULL,
+
+  completed INTEGER NOT NULL DEFAULT 1,
+  count INTEGER NOT NULL DEFAULT 1,
+  skipped INTEGER NOT NULL DEFAULT 0,
+
+  created_at TEXT NOT NULL,
+
+  UNIQUE(habit_id, day),
+
+  FOREIGN KEY (habit_id)
+    REFERENCES habits(id)
+    ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS habit_revisions (
+  habit_id INTEGER NOT NULL,
+  effective_day TEXT NOT NULL,
+  weekdays INTEGER NOT NULL,
+  target_count INTEGER NOT NULL,
+  unit TEXT NOT NULL,
+  archived INTEGER NOT NULL DEFAULT 0,
+  PRIMARY KEY (habit_id, effective_day),
+  FOREIGN KEY (habit_id) REFERENCES habits(id) ON DELETE CASCADE
 );
 `;

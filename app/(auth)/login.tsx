@@ -1,4 +1,4 @@
-import { StyleSheet, Text, View } from "react-native";
+import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, View } from "react-native";
 
 import { router } from "expo-router";
 
@@ -19,8 +19,15 @@ export default function LoginScreen() {
   }
 
   return (
-    <View style={styles.screen}>
-      <View style={styles.content}>
+    <KeyboardAvoidingView
+      style={styles.screen}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+    >
+      <ScrollView
+        contentContainerStyle={styles.content}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="on-drag"
+      >
         <View>
           <Text style={styles.eyebrow}>WELCOME BACK</Text>
 
@@ -55,8 +62,8 @@ export default function LoginScreen() {
         <Text style={styles.helper}>
           For now, this button uses a mock login.
         </Text>
-      </View>
-    </View>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 
@@ -67,7 +74,7 @@ const styles = StyleSheet.create({
   },
 
   content: {
-    flex: 1,
+    flexGrow: 1,
 
     justifyContent: "center",
 
