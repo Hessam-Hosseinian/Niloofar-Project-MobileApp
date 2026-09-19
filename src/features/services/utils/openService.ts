@@ -1,17 +1,17 @@
 import { router } from "expo-router";
 
-export function openService(serviceKey: string) {
-  if (serviceKey === "tasks") {
-    router.push("/(app)/service/tasks");
-    return;
-  }
-  if (serviceKey === "calendar") {
-    router.push("/(app)/service/calendar");
-    return;
-  }
+const directServiceRoutes: Record<string, string> = {
+  tasks: "/(app)/service/tasks",
+  calendar: "/(app)/service/calendar",
+  habits: "/(app)/service/habits",
+  games: "/(app)/service/games",
+};
 
-  if (serviceKey === "habits") {
-    router.push("/(app)/service/habits");
+export function openService(serviceKey: string) {
+  const directRoute = directServiceRoutes[serviceKey];
+
+  if (directRoute) {
+    router.push(directRoute as never);
     return;
   }
 
