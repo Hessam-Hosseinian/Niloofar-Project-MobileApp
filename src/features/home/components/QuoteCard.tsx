@@ -5,8 +5,8 @@ import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
 import {
   getQuotes,
   getRandomQuote,
-  Quote,
-} from "../src/features/services/quotes";
+  type Quote,
+} from "@/src/features/home/api/quotes";
 
 export default function QuoteCard() {
   const [quotes, setQuotes] = useState<Quote[]>([]);
