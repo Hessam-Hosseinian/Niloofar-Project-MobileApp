@@ -9,39 +9,32 @@ import {
 } from "@/src/features/home/api/quotes";
 
 export default function QuoteCard() {
-  const [quotes, setQuotes] = useState<Quote[]>([]);
   const [quote, setQuote] = useState<Quote | null>(null);
   const [loading, setLoading] = useState(true);
-  const [changing, setChanging] = useState(false);
 
   useEffect(() => {
-    loadQuotes();
-  }, []);
+    let active = true;
 
-  async function loadQuotes() {
-    try {
-      setLoading(true);
+    async function loadQuotes() {
+      try {
+        const data = await getQuotes();
 
-      const data = await getQuotes();
-
-      setQuotes(data);
-      setQuote(getRandomQuote(data));
-    } finally {
-      setLoading(false);
+        if (active) {
+          setQuote(getRandomQuote(data));
+        }
+      } finally {
+        if (active) {
+          setLoading(false);
+        }
+      }
     }
-  }
 
-  function handleAnotherQuote() {
-    if (!quotes.length || changing) return;
+    void loadQuotes();
 
-    setChanging(true);
-
-    setTimeout(() => {
-      setQuote((current) => getRandomQuote(quotes, current ?? undefined));
-
-      setChanging(false);
-    }, 130);
-  }
+    return () => {
+      active = false;
+    };
+  }, []);
 
   if (loading) {
     return (
@@ -80,32 +73,9 @@ export default function QuoteCard() {
         <View style={styles.quoteContainer}>
           <Text style={styles.quoteMark}>“</Text>
 
-          <Text style={[styles.quote, changing && styles.quoteChanging]}>
-            {quote.q}
-          </Text>
+          <Text style={styles.quote}>{quote.q}</Text>
 
           <Text style={styles.author}>— {quote.a}</Text>
-        </View>
-
-        <View style={styles.footer}>
-          {/* <Pressable
-            onPress={handleAnotherQuote}
-            style={({ pressed }) => [
-              styles.button,
-              pressed && styles.buttonPressed,
-            ]}
-          >
-            <RefreshCw size={16} color="#111111" strokeWidth={2.6} />
-
-            <Text style={styles.buttonText}>Another one</Text>
-          </Pressable> */}
-
-          {/* <Pressable
-            hitSlop={8}
-            onPress={() => Linking.openURL("https://zenquotes.io/")}
-          >
-            <Text style={styles.credit}>ZenQuotes</Text>
-          </Pressable> */}
         </View>
       </View>
     </View>
@@ -221,10 +191,6 @@ const styles = StyleSheet.create({
     letterSpacing: -0.35,
   },
 
-  quoteChanging: {
-    opacity: 0.35,
-  },
-
   author: {
     marginTop: 12,
 
@@ -232,50 +198,6 @@ const styles = StyleSheet.create({
 
     fontSize: 14,
     fontWeight: "700",
-  },
-
-  footer: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-
-    gap: 10,
-  },
-
-  button: {
-    flexDirection: "row",
-    alignItems: "center",
-
-    gap: 7,
-
-    backgroundColor: "#FFFFFF",
-
-    paddingHorizontal: 13,
-    paddingVertical: 9,
-
-    borderWidth: 2,
-    borderColor: "#111111",
-    borderRadius: 11,
-  },
-
-  buttonPressed: {
-    transform: [{ translateX: 2 }, { translateY: 2 }],
-  },
-
-  buttonText: {
-    color: "#111111",
-
-    fontSize: 13,
-    fontWeight: "900",
-  },
-
-  credit: {
-    color: "#555555",
-
-    fontSize: 10,
-    fontWeight: "600",
-
-    textDecorationLine: "underline",
   },
 
   loadingContainer: {
