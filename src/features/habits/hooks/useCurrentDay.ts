@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { AppState } from "react-native";
 
-import { getLocalDay } from "./habitsRepository";
+import { getLocalDay } from "@/src/features/habits/data/habitsRepository";
 
 export function useCurrentDay() {
   const [today, setToday] = useState(getLocalDay);
