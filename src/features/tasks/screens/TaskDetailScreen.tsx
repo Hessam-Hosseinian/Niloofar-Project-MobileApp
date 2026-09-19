@@ -9,6 +9,7 @@ import {
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -36,10 +37,6 @@ import {
   toggleSubtask,
 } from "@/src/features/tasks/subtasksRepository";
 import DateTimePicker from "@react-native-community/datetimepicker";
-import { Button } from "@/src/components/ui/Button";
-import { Card } from "@/src/components/ui/Card";
-import { IconButton } from "@/src/components/ui/IconButton";
-import { Input } from "@/src/components/ui/Input";
 
 import {
   cancelTaskReminder,
@@ -1047,7 +1044,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
 
     gap: 12,
-
     paddingHorizontal: 2,
     borderBottomWidth: 1,
     borderBottomColor: detailUi.line,
