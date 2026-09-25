@@ -167,4 +167,23 @@ CREATE TABLE IF NOT EXISTS music_play_history (
   FOREIGN KEY (track_id) REFERENCES music_tracks(id) ON DELETE CASCADE
 );
 CREATE INDEX IF NOT EXISTS music_play_history_track_idx ON music_play_history(track_id, id DESC);
+
+CREATE TABLE IF NOT EXISTS music_playlists (
+  id TEXT PRIMARY KEY NOT NULL,
+  name TEXT NOT NULL,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS music_playlist_tracks (
+  playlist_id TEXT NOT NULL,
+  track_id TEXT NOT NULL,
+  position INTEGER NOT NULL,
+  added_at TEXT NOT NULL,
+  PRIMARY KEY (playlist_id, track_id),
+  FOREIGN KEY (playlist_id) REFERENCES music_playlists(id) ON DELETE CASCADE,
+  FOREIGN KEY (track_id) REFERENCES music_tracks(id) ON DELETE CASCADE
+);
+CREATE INDEX IF NOT EXISTS music_playlist_tracks_order_idx
+  ON music_playlist_tracks(playlist_id, position);
 `;

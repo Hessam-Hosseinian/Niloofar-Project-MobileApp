@@ -9,15 +9,18 @@ import { EmptyLibraryState } from "@/src/features/music/components/EmptyLibraryS
 import { LibraryActions } from "@/src/features/music/components/LibraryActions";
 import { MusicCollectionPreview } from "@/src/features/music/components/MusicCollectionPreview";
 import { MusicHero } from "@/src/features/music/components/MusicHero";
+import { MusicPlaylistsPreview } from "@/src/features/music/components/MusicPlaylistsPreview";
 import { MusicTrackRow } from "@/src/features/music/components/MusicTrackRow";
 import { useMusicLibrary } from "@/src/features/music/hooks/useMusicLibrary";
 import { useMusicPlayerActions } from "@/src/features/music/hooks/useMusicPlayerActions";
+import { useMusicPlaylists } from "@/src/features/music/hooks/useMusicPlaylists";
 import type { LibraryTrack } from "@/src/features/music/types";
 import { colors, spacing, typography } from "@/src/theme";
 
 export default function MusicScreen() {
   const insets = useSafeAreaInsets();
   const library = useMusicLibrary(true);
+  const playlists = useMusicPlaylists();
   const { playFromList, toggleFavorite } = useMusicPlayerActions();
   const [actionError, setActionError] = useState<string | null>(null);
   const playSong = (track: LibraryTrack) =>
@@ -74,6 +77,12 @@ export default function MusicScreen() {
       </View>
 
       <MusicHero />
+
+      <MusicPlaylistsPreview
+        playlists={playlists.playlists}
+        loading={playlists.loading}
+        error={playlists.error}
+      />
 
       <MusicCollectionPreview
         title="Favorites"

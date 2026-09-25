@@ -3,7 +3,7 @@ import { File, Paths } from "expo-file-system";
 import { getDatabase } from "@/src/db/database";
 import type { LibraryTrack } from "@/src/features/music/types";
 
-type MusicRow = {
+export type MusicRow = {
   id: string;
   source_type: "imported" | "device";
   source_uri: string;
@@ -48,7 +48,7 @@ export type ImportedTrackDraft = {
   fingerprint: string | null;
 };
 
-function toTrack(row: MusicRow): LibraryTrack {
+export function musicRowToTrack(row: MusicRow): LibraryTrack {
   const file = row.storage_name
     ? new File(Paths.document, "music", row.storage_name)
     : null;
@@ -73,7 +73,7 @@ export async function getLibraryTracks(): Promise<LibraryTrack[]> {
   const rows = await db.getAllAsync<MusicRow>(
     "SELECT * FROM music_tracks WHERE hidden = 0 ORDER BY title COLLATE NOCASE, id",
   );
-  return rows.map(toTrack);
+  return rows.map(musicRowToTrack);
 }
 
 export async function getFavoriteTracks(limit?: number): Promise<LibraryTrack[]> {
@@ -83,7 +83,7 @@ export async function getFavoriteTracks(limit?: number): Promise<LibraryTrack[]>
       ORDER BY title COLLATE NOCASE, id ${limit ? "LIMIT ?" : ""}`,
     ...(limit ? [limit] : []),
   );
-  return rows.map(toTrack);
+  return rows.map(musicRowToTrack);
 }
 
 export async function getRecentlyPlayedTracks(limit?: number): Promise<LibraryTrack[]> {
@@ -96,7 +96,7 @@ export async function getRecentlyPlayedTracks(limit?: number): Promise<LibraryTr
       ORDER BY recent.last_play_id DESC ${limit ? "LIMIT ?" : ""}`,
     ...(limit ? [limit] : []),
   );
-  return rows.map(toTrack);
+  return rows.map(musicRowToTrack);
 }
 
 export async function toggleMusicFavorite(id: string): Promise<boolean> {
