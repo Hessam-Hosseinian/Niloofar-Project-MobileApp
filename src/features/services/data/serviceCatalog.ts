@@ -388,9 +388,9 @@ export const services: ServiceItem[] = [
   },
 
   {
-    key: "media",
-    title: "Media",
-    subtitle: "Media and entertainment tools",
+    key: "music",
+    title: "Music",
+    subtitle: "Your local music, playlists and player",
     category: "utility",
     icon: Music,
     color: colors.pink,

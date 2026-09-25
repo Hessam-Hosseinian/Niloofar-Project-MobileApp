@@ -138,4 +138,23 @@ CREATE TABLE IF NOT EXISTS habit_revisions (
   PRIMARY KEY (habit_id, effective_day),
   FOREIGN KEY (habit_id) REFERENCES habits(id) ON DELETE CASCADE
 );
+
+CREATE TABLE IF NOT EXISTS music_tracks (
+  id TEXT PRIMARY KEY NOT NULL,
+  source_type TEXT NOT NULL CHECK(source_type IN ('imported', 'device')),
+  source_uri TEXT NOT NULL,
+  storage_name TEXT,
+  filename TEXT NOT NULL,
+  title TEXT NOT NULL,
+  artist TEXT NOT NULL,
+  album TEXT,
+  duration_seconds REAL,
+  file_size INTEGER,
+  fingerprint TEXT UNIQUE,
+  hidden INTEGER NOT NULL DEFAULT 0,
+  missing INTEGER NOT NULL DEFAULT 0,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS music_tracks_visible_idx ON music_tracks(hidden, missing, title);
 `;

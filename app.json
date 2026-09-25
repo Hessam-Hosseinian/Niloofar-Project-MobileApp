@@ -12,6 +12,10 @@
       "supportsTablet": true
     },
     "android": {
+      "blockedPermissions": [
+        "android.permission.READ_MEDIA_VISUAL_USER_SELECTED",
+        "android.permission.WRITE_EXTERNAL_STORAGE"
+      ],
       "softwareKeyboardLayoutMode": "resize",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
@@ -19,7 +23,6 @@
         "backgroundImage": "./assets/images/android-icon-background.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
-      "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
       "package": "com.anonymous.superapp"
     },
@@ -45,7 +48,34 @@
       "expo-secure-store",
       "expo-sqlite",
       "@react-native-community/datetimepicker",
-      "expo-sharing"
+      "expo-sharing",
+      [
+        "expo-audio",
+        {
+          "microphonePermission": false,
+          "recordAudioAndroid": false,
+          "enableBackgroundPlayback": false
+        }
+      ],
+      [
+        "expo-media-library",
+        {
+          "photosPermission": false,
+          "savePhotosPermission": false,
+          "granularPermissions": [
+            "audio"
+          ]
+        }
+      ],
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "exclusiveMavenMirror": "https://maven.myket.ir"
+          }
+        }
+      ],
+      "./plugins/withLowMemoryAndroidBuild"
     ],
     "experiments": {
       "typedRoutes": true,

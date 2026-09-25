@@ -5,6 +5,7 @@ const directServiceRoutes: Record<string, string> = {
   calendar: "/(app)/service/calendar",
   habits: "/(app)/service/habits",
   games: "/(app)/service/games",
+  music: "/(app)/service/music",
 };
 
 export function openService(serviceKey: string) {

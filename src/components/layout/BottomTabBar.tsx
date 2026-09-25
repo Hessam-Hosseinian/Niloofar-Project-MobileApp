@@ -9,6 +9,7 @@ import { Pressable, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { colors, radius } from "@/src/theme";
+import { MusicMiniPlayer } from "@/src/features/music/components/MusicMiniPlayer";
 
 const tabs = {
   index: {
@@ -52,9 +53,10 @@ export function BottomTabBar({
         },
       ]}
     >
-      <View style={styles.shadow} />
-
-      <View style={styles.bar}>
+      <MusicMiniPlayer embedded />
+      <View style={styles.barWrapper}>
+        <View style={styles.shadow} />
+        <View style={styles.bar}>
         {state.routes.map((route, index) => {
           const config = tabs[route.name as keyof typeof tabs];
 
@@ -117,6 +119,7 @@ export function BottomTabBar({
             </Pressable>
           );
         })}
+        </View>
       </View>
     </View>
   );
@@ -132,13 +135,15 @@ const styles = StyleSheet.create({
     paddingTop: 8,
   },
 
+  barWrapper: { position: "relative" },
+
   shadow: {
     position: "absolute",
 
     top: 12,
-    left: 20,
-    right: 12,
-    bottom: 8,
+    left: 4,
+    right: -4,
+    bottom: -4,
 
     borderRadius: radius.sm,
     backgroundColor: colors.foreground,
