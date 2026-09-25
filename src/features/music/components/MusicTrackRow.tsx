@@ -1,4 +1,4 @@
-import { Ellipsis, Play } from "lucide-react-native";
+import { Ellipsis, Heart, Play } from "lucide-react-native";
 import { memo } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
@@ -11,9 +11,10 @@ type Props = {
   track: LibraryTrack;
   onPlay: (track: LibraryTrack) => void;
   onOptions?: (track: LibraryTrack) => void;
+  onFavorite?: (track: LibraryTrack) => void;
 };
 
-export const MusicTrackRow = memo(function MusicTrackRow({ track, onPlay, onOptions }: Props) {
+export const MusicTrackRow = memo(function MusicTrackRow({ track, onPlay, onOptions, onFavorite }: Props) {
   return (
     <View style={styles.row}>
       <Pressable
@@ -30,10 +31,25 @@ export const MusicTrackRow = memo(function MusicTrackRow({ track, onPlay, onOpti
           <Text numberOfLines={1} style={styles.subtitle}>
             {track.available ? track.artist : "File unavailable"}
             {track.available && track.durationSeconds ? ` · ${formatPlaybackTime(track.durationSeconds)}` : ""}
+            {track.playCount > 0 ? ` · ${track.playCount} play${track.playCount === 1 ? "" : "s"}` : ""}
           </Text>
         </View>
         <Play size={18} color={track.available ? colors.foreground : colors.muted} />
       </Pressable>
+      {onFavorite && (
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={`${track.favorite ? "Remove" : "Add"} ${track.title} ${track.favorite ? "from" : "to"} favorites`}
+          onPress={() => onFavorite(track)}
+          style={styles.options}
+        >
+          <Heart
+            size={21}
+            color={colors.foreground}
+            fill={track.favorite ? colors.pink : "transparent"}
+          />
+        </Pressable>
+      )}
       {onOptions && (
         <Pressable
           accessibilityRole="button"

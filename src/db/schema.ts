@@ -151,10 +151,20 @@ CREATE TABLE IF NOT EXISTS music_tracks (
   duration_seconds REAL,
   file_size INTEGER,
   fingerprint TEXT UNIQUE,
+  favorite INTEGER NOT NULL DEFAULT 0,
+  play_count INTEGER NOT NULL DEFAULT 0,
   hidden INTEGER NOT NULL DEFAULT 0,
   missing INTEGER NOT NULL DEFAULT 0,
   created_at TEXT NOT NULL,
   updated_at TEXT NOT NULL
 );
 CREATE INDEX IF NOT EXISTS music_tracks_visible_idx ON music_tracks(hidden, missing, title);
+
+CREATE TABLE IF NOT EXISTS music_play_history (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  track_id TEXT NOT NULL,
+  played_at TEXT NOT NULL,
+  FOREIGN KEY (track_id) REFERENCES music_tracks(id) ON DELETE CASCADE
+);
+CREATE INDEX IF NOT EXISTS music_play_history_track_idx ON music_play_history(track_id, id DESC);
 `;

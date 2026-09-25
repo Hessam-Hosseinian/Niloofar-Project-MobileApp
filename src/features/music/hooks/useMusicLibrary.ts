@@ -5,7 +5,9 @@ import { Platform } from "react-native";
 import {
   getHiddenDeviceTrackCount,
   getLibraryTracks,
+  getRecentlyPlayedTracks,
   restoreHiddenDeviceTracks,
+  subscribeToMusicChanges,
 } from "@/src/features/music/data/musicRepository";
 import {
   importLocalMusic,
@@ -20,6 +22,7 @@ function errorMessage(error: unknown) {
 
 export function useMusicLibrary(autoScan = false) {
   const [tracks, setTracks] = useState<LibraryTrack[]>([]);
+  const [recentTracks, setRecentTracks] = useState<LibraryTrack[]>([]);
   const [hiddenCount, setHiddenCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState<"scan" | "import" | null>(null);
@@ -28,11 +31,13 @@ export function useMusicLibrary(autoScan = false) {
 
   const refresh = useCallback(async () => {
     try {
-      const [nextTracks, nextHiddenCount] = await Promise.all([
+      const [nextTracks, nextRecentTracks, nextHiddenCount] = await Promise.all([
         getLibraryTracks(),
+        getRecentlyPlayedTracks(),
         getHiddenDeviceTrackCount(),
       ]);
       setTracks(nextTracks);
+      setRecentTracks(nextRecentTracks);
       setHiddenCount(nextHiddenCount);
       setError(null);
     } catch (caught) {
@@ -45,6 +50,8 @@ export function useMusicLibrary(autoScan = false) {
   useFocusEffect(useCallback(() => {
     void refresh();
   }, [refresh]));
+
+  useEffect(() => subscribeToMusicChanges(() => { void refresh(); }), [refresh]);
 
   useEffect(() => {
     if (!autoScan || Platform.OS !== "android") return;
@@ -115,7 +122,8 @@ export function useMusicLibrary(autoScan = false) {
   }, [refresh]);
 
   return {
-    tracks, hiddenCount, loading, busy, message, error,
+    tracks, favoriteTracks: tracks.filter((track) => track.favorite), recentTracks,
+    hiddenCount, loading, busy, message, error,
     refresh, scan, importFiles, restoreHidden,
   };
 }

@@ -15,6 +15,12 @@ import {
 } from "react";
 
 import type { MusicTrack } from "@/src/features/music/types";
+import { recordMusicPlay, toggleMusicFavorite } from "@/src/features/music/data/musicRepository";
+import {
+  advanceListeningProgress,
+  newListeningProgress,
+  type ListeningProgress,
+} from "@/src/features/music/utils/playHistory";
 import {
   appendToQueue,
   clearUpcoming,
@@ -40,6 +46,7 @@ type MusicPlayerContextValue = {
   playFromList: (track: MusicTrack, tracks: MusicTrack[]) => void;
   addToQueue: (track: MusicTrack) => void;
   playNext: (track: MusicTrack) => void;
+  toggleFavorite: (trackId: string) => Promise<void>;
   next: () => void;
   previous: () => void;
   jumpToQueueEntry: (id: number) => void;
@@ -55,7 +62,7 @@ type MusicPlayerContextValue = {
 
 type MusicPlayerActions = Pick<
   MusicPlayerContextValue,
-  "playTrack" | "playFromList" | "addToQueue" | "playNext" | "clearTrack"
+  "playTrack" | "playFromList" | "addToQueue" | "playNext" | "toggleFavorite" | "clearTrack"
 >;
 type MusicQueueContextValue = Pick<
   MusicPlayerContextValue,
@@ -80,6 +87,7 @@ export function MusicPlayerProvider({ children }: PropsWithChildren) {
   const nextEntryId = useRef(1);
   const handledFinishId = useRef<number | null>(null);
   const finishArmed = useRef(false);
+  const listeningRef = useRef<ListeningProgress | null>(null);
   const statusRef = useRef(status);
   statusRef.current = status;
   const currentTrack = currentQueueEntry(queue)?.track ?? null;
@@ -92,6 +100,7 @@ export function MusicPlayerProvider({ children }: PropsWithChildren) {
   const activateQueue = useCallback((nextQueue: PlaybackQueue) => {
     const entry = currentQueueEntry(nextQueue);
     finishArmed.current = false;
+    listeningRef.current = entry ? newListeningProgress(entry.id) : null;
     try {
       if (entry) {
         player.replace(entry.track.source);
@@ -104,6 +113,7 @@ export function MusicPlayerProvider({ children }: PropsWithChildren) {
       commitQueue(nextQueue);
       setSessionError(null);
     } catch (error) {
+      listeningRef.current = null;
       finishArmed.current = true;
       console.warn("Music queue playback failed", error);
       setSessionError("This audio file could not be played.");
@@ -155,6 +165,19 @@ export function MusicPlayerProvider({ children }: PropsWithChildren) {
     else activateQueue(nextQueue);
   }, [activateQueue, commitQueue, createEntry]);
 
+  const toggleFavorite = useCallback(async (trackId: string) => {
+    const favorite = await toggleMusicFavorite(trackId);
+    if (!queueRef.current.entries.some((entry) => entry.track.id === trackId)) return;
+    commitQueue({
+      ...queueRef.current,
+      entries: queueRef.current.entries.map((entry) =>
+        entry.track.id === trackId
+          ? { ...entry, track: { ...entry.track, favorite } }
+          : entry
+      ),
+    });
+  }, [commitQueue]);
+
   const next = useCallback(() => {
     const nextQueue = stepQueue(queueRef.current, 1);
     if (nextQueue !== queueRef.current) activateQueue(nextQueue);
@@ -201,6 +224,22 @@ export function MusicPlayerProvider({ children }: PropsWithChildren) {
 
   useEffect(() => {
     const subscription = player.addListener("playbackStatusUpdate", (nextStatus) => {
+      const playingEntry = currentQueueEntry(queueRef.current);
+      const listening = listeningRef.current;
+      if (playingEntry && listening?.entryId === playingEntry.id) {
+        const updated = advanceListeningProgress(listening, nextStatus);
+        listeningRef.current = updated.progress;
+        if (updated.shouldRecord && (
+          playingEntry.track.sourceType === "imported" || playingEntry.track.sourceType === "device"
+        )) {
+          void recordMusicPlay(playingEntry.track.id).catch((error: unknown) => {
+            console.warn("Could not save music play history", error);
+            if (listeningRef.current?.entryId === playingEntry.id) {
+              listeningRef.current = { ...listeningRef.current, recorded: false };
+            }
+          });
+        }
+      }
       if (!nextStatus.didJustFinish) {
         if (nextStatus.playing) finishArmed.current = true;
         return;
@@ -271,6 +310,7 @@ export function MusicPlayerProvider({ children }: PropsWithChildren) {
       playFromList,
       addToQueue,
       playNext,
+      toggleFavorite,
       next,
       previous,
       jumpToQueueEntry,
@@ -296,6 +336,7 @@ export function MusicPlayerProvider({ children }: PropsWithChildren) {
       playTrack,
       playFromList,
       playNext,
+      toggleFavorite,
       previous,
       removeFromQueue,
       restart,
@@ -307,8 +348,8 @@ export function MusicPlayerProvider({ children }: PropsWithChildren) {
   );
 
   const actions = useMemo<MusicPlayerActions>(
-    () => ({ playTrack, playFromList, addToQueue, playNext, clearTrack }),
-    [playTrack, playFromList, addToQueue, playNext, clearTrack],
+    () => ({ playTrack, playFromList, addToQueue, playNext, toggleFavorite, clearTrack }),
+    [playTrack, playFromList, addToQueue, playNext, toggleFavorite, clearTrack],
   );
   const queueActions = useMemo<MusicQueueContextValue>(
     () => ({

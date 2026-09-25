@@ -15,9 +15,22 @@ type MusicRow = {
   duration_seconds: number | null;
   file_size: number | null;
   fingerprint: string | null;
+  favorite: number;
+  play_count: number;
   hidden: number;
   missing: number;
 };
+
+const changeListeners = new Set<() => void>();
+
+export function subscribeToMusicChanges(listener: () => void): () => void {
+  changeListeners.add(listener);
+  return () => { changeListeners.delete(listener); };
+}
+
+function notifyMusicChanged() {
+  for (const listener of changeListeners) listener();
+}
 
 export type DeviceTrackDraft = {
   id: string;
@@ -50,6 +63,8 @@ function toTrack(row: MusicRow): LibraryTrack {
     filename: row.filename,
     durationSeconds: row.duration_seconds,
     available,
+    favorite: row.favorite === 1,
+    playCount: row.play_count,
   };
 }
 
@@ -59,6 +74,65 @@ export async function getLibraryTracks(): Promise<LibraryTrack[]> {
     "SELECT * FROM music_tracks WHERE hidden = 0 ORDER BY title COLLATE NOCASE, id",
   );
   return rows.map(toTrack);
+}
+
+export async function getFavoriteTracks(limit?: number): Promise<LibraryTrack[]> {
+  const db = await getDatabase();
+  const rows = await db.getAllAsync<MusicRow>(
+    `SELECT * FROM music_tracks WHERE hidden = 0 AND favorite = 1
+      ORDER BY title COLLATE NOCASE, id ${limit ? "LIMIT ?" : ""}`,
+    ...(limit ? [limit] : []),
+  );
+  return rows.map(toTrack);
+}
+
+export async function getRecentlyPlayedTracks(limit?: number): Promise<LibraryTrack[]> {
+  const db = await getDatabase();
+  const rows = await db.getAllAsync<MusicRow>(
+    `SELECT music_tracks.* FROM music_tracks
+      JOIN (SELECT track_id, MAX(id) AS last_play_id FROM music_play_history GROUP BY track_id) recent
+        ON recent.track_id = music_tracks.id
+      WHERE music_tracks.hidden = 0
+      ORDER BY recent.last_play_id DESC ${limit ? "LIMIT ?" : ""}`,
+    ...(limit ? [limit] : []),
+  );
+  return rows.map(toTrack);
+}
+
+export async function toggleMusicFavorite(id: string): Promise<boolean> {
+  const db = await getDatabase();
+  const favorite = await db.withExclusiveTransactionAsync(async (tx) => {
+    await tx.runAsync(
+      "UPDATE music_tracks SET favorite = 1 - favorite WHERE id = ? AND hidden = 0",
+      id,
+    );
+    const row = await tx.getFirstAsync<{ favorite: number }>(
+      "SELECT favorite FROM music_tracks WHERE id = ? AND hidden = 0",
+      id,
+    );
+    if (!row) throw new Error("This song is no longer in your library.");
+    return row.favorite === 1;
+  });
+  notifyMusicChanged();
+  return favorite;
+}
+
+export async function recordMusicPlay(trackId: string): Promise<void> {
+  const db = await getDatabase();
+  const recorded = await db.withExclusiveTransactionAsync(async (tx) => {
+    const result = await tx.runAsync(
+      "UPDATE music_tracks SET play_count = play_count + 1 WHERE id = ? AND hidden = 0",
+      trackId,
+    );
+    if (result.changes === 0) return false;
+    await tx.runAsync(
+      "INSERT INTO music_play_history (track_id, played_at) VALUES (?, ?)",
+      trackId,
+      new Date().toISOString(),
+    );
+    return true;
+  });
+  if (recorded) notifyMusicChanged();
 }
 
 export async function getHiddenDeviceTrackCount(): Promise<number> {

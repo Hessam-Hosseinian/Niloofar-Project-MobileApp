@@ -9,10 +9,13 @@ export type MusicTrack = {
   album?: string;
   source: AudioSource;
   sourceType: MusicSourceType;
+  favorite?: boolean;
 };
 
 export type LibraryTrack = MusicTrack & {
   filename: string;
   durationSeconds: number | null;
   available: boolean;
+  favorite: boolean;
+  playCount: number;
 };

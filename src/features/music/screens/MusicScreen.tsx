@@ -1,11 +1,13 @@
 import { router } from "expo-router";
 import { ArrowLeft, ArrowRight } from "lucide-react-native";
+import { useState } from "react";
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { IconButton } from "@/src/components/ui/IconButton";
 import { EmptyLibraryState } from "@/src/features/music/components/EmptyLibraryState";
 import { LibraryActions } from "@/src/features/music/components/LibraryActions";
+import { MusicCollectionPreview } from "@/src/features/music/components/MusicCollectionPreview";
 import { MusicHero } from "@/src/features/music/components/MusicHero";
 import { MusicTrackRow } from "@/src/features/music/components/MusicTrackRow";
 import { useMusicLibrary } from "@/src/features/music/hooks/useMusicLibrary";
@@ -16,9 +18,17 @@ import { colors, spacing, typography } from "@/src/theme";
 export default function MusicScreen() {
   const insets = useSafeAreaInsets();
   const library = useMusicLibrary(true);
-  const { playFromList } = useMusicPlayerActions();
+  const { playFromList, toggleFavorite } = useMusicPlayerActions();
+  const [actionError, setActionError] = useState<string | null>(null);
   const playSong = (track: LibraryTrack) =>
     playFromList(track, library.tracks.filter((song) => song.available));
+  const favoriteSong = (track: LibraryTrack) => {
+    void toggleFavorite(track.id)
+      .then(() => setActionError(null))
+      .catch((error: unknown) => {
+        setActionError(error instanceof Error ? error.message : "Could not update favorites.");
+      });
+  };
 
   return (
     <ScrollView
@@ -57,13 +67,26 @@ export default function MusicScreen() {
         <LibraryActions
           busy={library.busy}
           message={library.message}
-          error={library.error}
+          error={library.error ?? actionError}
           onScan={() => void library.scan()}
           onImport={() => void library.importFiles()}
         />
       </View>
 
       <MusicHero />
+
+      <MusicCollectionPreview
+        title="Favorites"
+        tracks={library.favoriteTracks}
+        onPlay={playSong}
+        onFavorite={favoriteSong}
+      />
+      <MusicCollectionPreview
+        title="Recently played"
+        tracks={library.recentTracks}
+        onPlay={playSong}
+        onFavorite={favoriteSong}
+      />
 
       <View style={styles.section}>
         <View style={styles.sectionHeading}>
@@ -83,7 +106,7 @@ export default function MusicScreen() {
           library.tracks.length === 0 ? <EmptyLibraryState /> : (
             <View style={styles.preview}>
               {library.tracks.slice(0, 3).map((track) => (
-                <MusicTrackRow key={track.id} track={track} onPlay={playSong} />
+                <MusicTrackRow key={track.id} track={track} onPlay={playSong} onFavorite={favoriteSong} />
               ))}
             </View>
           )}

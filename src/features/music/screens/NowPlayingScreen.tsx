@@ -1,6 +1,7 @@
 import { router } from "expo-router";
 import {
   ArrowDown,
+  Heart,
   ListMusic,
   Pause,
   Play,
@@ -8,6 +9,7 @@ import {
   SkipForward,
   TriangleAlert,
 } from "lucide-react-native";
+import { useState } from "react";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -20,8 +22,21 @@ import { colors, radius, spacing, typography } from "@/src/theme";
 
 export default function NowPlayingScreen() {
   const insets = useSafeAreaInsets();
-  const { currentTrack, queue, status, error, togglePlayback, seekTo, previous, next } =
+  const { currentTrack, queue, status, error, togglePlayback, seekTo, previous, next, toggleFavorite } =
     useMusicPlayer();
+  const [favoriteBusy, setFavoriteBusy] = useState(false);
+  const [favoriteError, setFavoriteError] = useState<string | null>(null);
+
+  const onFavorite = () => {
+    if (!currentTrack || favoriteBusy) return;
+    setFavoriteBusy(true);
+    void toggleFavorite(currentTrack.id)
+      .then(() => setFavoriteError(null))
+      .catch((caught: unknown) => {
+        setFavoriteError(caught instanceof Error ? caught.message : "Could not update favorites.");
+      })
+      .finally(() => setFavoriteBusy(false));
+  };
 
   return (
     <ScrollView
@@ -72,13 +87,24 @@ export default function NowPlayingScreen() {
           </View>
 
           <View style={styles.metadata}>
-            <Text
-              numberOfLines={2}
-              accessibilityRole="header"
-              style={styles.trackTitle}
-            >
-              {currentTrack.title}
-            </Text>
+            <View style={styles.titleRow}>
+              <Text
+                numberOfLines={2}
+                accessibilityRole="header"
+                style={styles.trackTitle}
+              >
+                {currentTrack.title}
+              </Text>
+              {(currentTrack.sourceType === "imported" || currentTrack.sourceType === "device") && (
+                <IconButton
+                  accessibilityLabel={currentTrack.favorite ? "Remove from favorites" : "Add to favorites"}
+                  variant="outline"
+                  disabled={favoriteBusy}
+                  icon={<Heart size={21} color={colors.foreground} fill={currentTrack.favorite ? colors.pink : "transparent"} />}
+                  onPress={onFavorite}
+                />
+              )}
+            </View>
             <Text numberOfLines={1} style={styles.artist}>
               {currentTrack.artist}
             </Text>
@@ -87,6 +113,7 @@ export default function NowPlayingScreen() {
                 {currentTrack.album}
               </Text>
             )}
+            {favoriteError && <Text accessibilityRole="alert" style={styles.favoriteError}>{favoriteError}</Text>}
           </View>
 
           <View style={styles.transport}>
@@ -199,7 +226,9 @@ const styles = StyleSheet.create({
     borderRadius: radius.sm,
   },
   metadata: { width: "100%", gap: spacing.xs },
+  titleRow: { flexDirection: "row", alignItems: "center", gap: spacing.md },
   trackTitle: {
+    flex: 1,
     fontFamily: "SpaceGrotesk_700Bold",
     fontSize: 30,
     lineHeight: 36,
@@ -207,6 +236,7 @@ const styles = StyleSheet.create({
   },
   artist: { ...typography.h3, color: colors.muted },
   album: { ...typography.muted, color: colors.muted },
+  favoriteError: { ...typography.muted, color: colors.destructive },
   transport: { width: "100%", gap: spacing.lg },
   controls: {
     flexDirection: "row",
