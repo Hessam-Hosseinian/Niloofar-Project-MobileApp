@@ -1,6 +1,6 @@
 import { router } from "expo-router";
 import { ArrowLeft, ArrowRight } from "lucide-react-native";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -21,8 +21,24 @@ export default function MusicScreen() {
   const insets = useSafeAreaInsets();
   const library = useMusicLibrary(true);
   const playlists = useMusicPlaylists();
-  const { playFromList, toggleFavorite } = useMusicPlayerActions();
+  const { playFromList, toggleFavorite, resumeTrack } = useMusicPlayerActions();
   const [actionError, setActionError] = useState<string | null>(null);
+  const { continueListening, recentlyAdded, mostPlayed } = useMemo(() => {
+    const resumable = library.tracks.filter((track) => track.available && track.resumeSeconds >= 10 && (!track.durationSeconds || track.resumeSeconds < track.durationSeconds - 10));
+    const resumableById = new Map(resumable.map((track) => [track.id, track]));
+    const recentIds = new Set(library.recentTracks.map((track) => track.id));
+    return {
+      continueListening: [
+        ...library.recentTracks.flatMap((track) => {
+          const item = resumableById.get(track.id);
+          return item ? [item] : [];
+        }),
+        ...resumable.filter((track) => !recentIds.has(track.id)),
+      ],
+      recentlyAdded: [...library.tracks].sort((a, b) => b.addedAt.localeCompare(a.addedAt)),
+      mostPlayed: library.tracks.filter((track) => track.playCount > 0).sort((a, b) => b.playCount - a.playCount),
+    };
+  }, [library.tracks, library.recentTracks]);
   const playSong = (track: LibraryTrack) =>
     playFromList(track, library.tracks.filter((song) => song.available));
   const favoriteSong = (track: LibraryTrack) => {
@@ -78,6 +94,13 @@ export default function MusicScreen() {
 
       <MusicHero />
 
+      <MusicCollectionPreview
+        title="Continue listening"
+        tracks={continueListening}
+        onPlay={resumeTrack}
+        onFavorite={favoriteSong}
+      />
+
       <MusicPlaylistsPreview
         playlists={playlists.playlists}
         loading={playlists.loading}
@@ -93,6 +116,18 @@ export default function MusicScreen() {
       <MusicCollectionPreview
         title="Recently played"
         tracks={library.recentTracks}
+        onPlay={playSong}
+        onFavorite={favoriteSong}
+      />
+      <MusicCollectionPreview
+        title="Recently added"
+        tracks={recentlyAdded}
+        onPlay={playSong}
+        onFavorite={favoriteSong}
+      />
+      <MusicCollectionPreview
+        title="Most played"
+        tracks={mostPlayed}
         onPlay={playSong}
         onFavorite={favoriteSong}
       />

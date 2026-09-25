@@ -18,4 +18,6 @@ export type LibraryTrack = MusicTrack & {
   available: boolean;
   favorite: boolean;
   playCount: number;
+  addedAt: string;
+  resumeSeconds: number;
 };

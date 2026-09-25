@@ -99,6 +99,8 @@ export async function initializeDatabase() {
   await addColumnIfMissing(database, "habit_revisions", "unit", "unit TEXT NOT NULL DEFAULT ''");
   await addColumnIfMissing(database, "music_tracks", "favorite", "favorite INTEGER NOT NULL DEFAULT 0");
   await addColumnIfMissing(database, "music_tracks", "play_count", "play_count INTEGER NOT NULL DEFAULT 0");
+  await addColumnIfMissing(database, "music_tracks", "resume_seconds", "resume_seconds REAL NOT NULL DEFAULT 0");
+  await addColumnIfMissing(database, "music_tracks", "lyrics_text", "lyrics_text TEXT");
   await database.execAsync(`UPDATE habit_revisions SET unit = COALESCE(
     (SELECT habits.unit FROM habits WHERE habits.id = habit_revisions.habit_id),
     'times'

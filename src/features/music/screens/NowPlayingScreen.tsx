@@ -3,29 +3,35 @@ import {
   ArrowDown,
   Heart,
   ListMusic,
+  Gauge,
   Pause,
   Play,
+  Repeat,
+  Repeat1,
+  Shuffle,
   SkipBack,
   SkipForward,
   TriangleAlert,
 } from "lucide-react-native";
 import { useState } from "react";
-import { ScrollView, StyleSheet, Text, View } from "react-native";
+import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { Button } from "@/src/components/ui/Button";
 import { IconButton } from "@/src/components/ui/IconButton";
 import { MusicArtwork } from "@/src/features/music/components/MusicArtwork";
+import { MusicLyricsPanel } from "@/src/features/music/components/MusicLyricsPanel";
 import { PlaybackProgress } from "@/src/features/music/components/PlaybackProgress";
 import { useMusicPlayer } from "@/src/features/music/hooks/useMusicPlayer";
 import { colors, radius, spacing, typography } from "@/src/theme";
 
 export default function NowPlayingScreen() {
   const insets = useSafeAreaInsets();
-  const { currentTrack, queue, status, error, togglePlayback, seekTo, previous, next, toggleFavorite } =
+  const { currentTrack, queue, status, error, togglePlayback, seekTo, previous, next, toggleFavorite, playbackRate, setPlaybackRate, shuffleEnabled, toggleShuffle, repeatMode, cycleRepeatMode } =
     useMusicPlayer();
   const [favoriteBusy, setFavoriteBusy] = useState(false);
   const [favoriteError, setFavoriteError] = useState<string | null>(null);
+  const [speedOpen, setSpeedOpen] = useState(false);
 
   const onFavorite = () => {
     if (!currentTrack || favoriteBusy) return;
@@ -38,7 +44,7 @@ export default function NowPlayingScreen() {
       .finally(() => setFavoriteBusy(false));
   };
 
-  return (
+  return (<>
     <ScrollView
       style={styles.screen}
       contentContainerStyle={[
@@ -166,10 +172,20 @@ export default function NowPlayingScreen() {
               <IconButton
                 accessibilityLabel="Next song"
                 variant="outline"
-                disabled={queue.currentIndex >= queue.entries.length - 1}
+                disabled={queue.currentIndex >= queue.entries.length - 1 && repeatMode !== "all"}
                 icon={<SkipForward size={21} color={colors.foreground} />}
                 onPress={next}
               />
+            </View>
+            <View style={styles.modes}>
+              <Button variant={shuffleEnabled ? "accent" : "outline"} size="small"
+                accessibilityLabel={shuffleEnabled ? "Shuffle on" : "Shuffle off"}
+                leftIcon={<Shuffle size={17} color={colors.foreground} />}
+                onPress={toggleShuffle}>Shuffle {shuffleEnabled ? "on" : "off"}</Button>
+              <Button variant={repeatMode === "off" ? "outline" : "accent"} size="small"
+                accessibilityLabel={`Repeat ${repeatMode}`}
+                leftIcon={repeatMode === "one" ? <Repeat1 size={17} color={colors.foreground} /> : <Repeat size={17} color={colors.foreground} />}
+                onPress={cycleRepeatMode}>Repeat {repeatMode}</Button>
             </View>
             <Button
               variant="outline"
@@ -178,6 +194,11 @@ export default function NowPlayingScreen() {
             >
               Queue · {Math.max(queue.entries.length - queue.currentIndex - 1, 0)} up next
             </Button>
+            <Button
+              variant="outline"
+              leftIcon={<Gauge size={18} color={colors.foreground} />}
+              onPress={() => setSpeedOpen(true)}
+            >Speed · {playbackRate}×</Button>
           </View>
           <Text style={styles.sourceLabel}>
             {currentTrack.sourceType === "device"
@@ -186,10 +207,25 @@ export default function NowPlayingScreen() {
                 ? "IMPORTED TO NILOOFAR"
                 : "LOCAL AUDIO"}
           </Text>
+          {(currentTrack.sourceType === "device" || currentTrack.sourceType === "imported") &&
+            <MusicLyricsPanel key={currentTrack.id} trackId={currentTrack.id} currentTime={status.currentTime} />}
         </View>
       )}
     </ScrollView>
-  );
+    <Modal visible={speedOpen} transparent animationType="fade" onRequestClose={() => setSpeedOpen(false)}>
+      <View style={styles.modalScrim}><View style={styles.modalCard}>
+        <Text accessibilityRole="header" style={styles.headerTitle}>Playback speed</Text>
+        {[0.75, 1, 1.25, 1.5, 2].map((rate) => <Pressable
+          key={rate}
+          accessibilityRole="button"
+          accessibilityState={{ selected: rate === playbackRate }}
+          onPress={() => { setPlaybackRate(rate); setSpeedOpen(false); }}
+          style={[styles.speedOption, rate === playbackRate && styles.speedSelected]}
+        ><Text style={styles.speedText}>{rate}×{rate === playbackRate ? " · Current" : ""}</Text></Pressable>)}
+        <Button variant="outline" onPress={() => setSpeedOpen(false)}>Close</Button>
+      </View></View>
+    </Modal>
+  </>);
 }
 
 const styles = StyleSheet.create({
@@ -244,6 +280,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
   },
   playButton: { minWidth: 162 },
+  modes: { width: "100%", flexDirection: "row", justifyContent: "space-between", gap: spacing.sm },
   sourceLabel: {
     ...typography.label,
     color: colors.muted,
@@ -263,4 +300,9 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   emptyText: { ...typography.body, color: colors.muted, textAlign: "center" },
+  modalScrim: { flex: 1, justifyContent: "center", padding: spacing.xl, backgroundColor: "rgba(0,0,0,0.55)" },
+  modalCard: { gap: spacing.sm, padding: spacing.xl, backgroundColor: colors.background, borderWidth: 2, borderColor: colors.foreground },
+  speedOption: { minHeight: 48, justifyContent: "center", paddingHorizontal: spacing.md, borderWidth: 2, borderColor: colors.foreground, backgroundColor: colors.white },
+  speedSelected: { backgroundColor: colors.yellow },
+  speedText: { ...typography.body, color: colors.foreground },
 });

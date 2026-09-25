@@ -17,6 +17,8 @@ export type MusicRow = {
   fingerprint: string | null;
   favorite: number;
   play_count: number;
+  resume_seconds: number;
+  created_at: string;
   hidden: number;
   missing: number;
 };
@@ -65,6 +67,8 @@ export function musicRowToTrack(row: MusicRow): LibraryTrack {
     available,
     favorite: row.favorite === 1,
     playCount: row.play_count,
+    addedAt: row.created_at,
+    resumeSeconds: row.resume_seconds,
   };
 }
 
@@ -133,6 +137,74 @@ export async function recordMusicPlay(trackId: string): Promise<void> {
     return true;
   });
   if (recorded) notifyMusicChanged();
+}
+
+export async function saveMusicPosition(trackId: string, seconds: number, notify = false): Promise<void> {
+  if (!Number.isFinite(seconds)) return;
+  const db = await getDatabase();
+  await db.runAsync(
+    "UPDATE music_tracks SET resume_seconds = ? WHERE id = ? AND hidden = 0",
+    Math.max(0, seconds),
+    trackId,
+  );
+  if (notify) notifyMusicChanged();
+}
+
+export async function getMusicTrackById(id: string): Promise<LibraryTrack | null> {
+  const db = await getDatabase();
+  const row = await db.getFirstAsync<MusicRow>(
+    "SELECT * FROM music_tracks WHERE id = ? AND hidden = 0 LIMIT 1", id,
+  );
+  return row ? musicRowToTrack(row) : null;
+}
+
+export async function getLastMusicTrackId(): Promise<string | null> {
+  const db = await getDatabase();
+  const row = await db.getFirstAsync<{ value: string | null }>(
+    "SELECT value FROM preferences WHERE key = 'music:last_track_id'",
+  );
+  return row?.value ?? null;
+}
+
+export async function saveLastMusicTrackId(id: string | null): Promise<void> {
+  const db = await getDatabase();
+  await db.runAsync(
+    "INSERT INTO preferences (key, value) VALUES ('music:last_track_id', ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value",
+    id,
+  );
+}
+
+export async function updateMusicMetadata(id: string, title: string, artist: string, album: string): Promise<void> {
+  const cleanTitle = title.trim();
+  if (!cleanTitle) throw new Error("A song title is required.");
+  const db = await getDatabase();
+  const result = await db.runAsync(
+    "UPDATE music_tracks SET title = ?, artist = ?, album = ?, updated_at = ? WHERE id = ? AND hidden = 0",
+    cleanTitle,
+    artist.trim() || "Unknown artist",
+    album.trim() || null,
+    new Date().toISOString(),
+    id,
+  );
+  if (!result.changes) throw new Error("This song is no longer in your library.");
+  notifyMusicChanged();
+}
+
+export async function getMusicLyrics(id: string): Promise<string | null> {
+  const db = await getDatabase();
+  const row = await db.getFirstAsync<{ lyrics_text: string | null }>(
+    "SELECT lyrics_text FROM music_tracks WHERE id = ? AND hidden = 0", id,
+  );
+  return row?.lyrics_text ?? null;
+}
+
+export async function saveMusicLyrics(id: string, text: string | null): Promise<void> {
+  const db = await getDatabase();
+  const result = await db.runAsync(
+    "UPDATE music_tracks SET lyrics_text = ? WHERE id = ? AND hidden = 0",
+    text, id,
+  );
+  if (!result.changes) throw new Error("This song is no longer in your library.");
 }
 
 export async function getHiddenDeviceTrackCount(): Promise<number> {

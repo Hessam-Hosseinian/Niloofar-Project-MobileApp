@@ -13,7 +13,7 @@ import { colors, spacing, typography } from "@/src/theme";
 
 export default function MusicQueueScreen() {
   const insets = useSafeAreaInsets();
-  const { queue, jumpToQueueEntry, removeFromQueue, clearUpcoming, moveInQueue } = useMusicQueue();
+  const { queue, shuffleEnabled, jumpToQueueEntry, removeFromQueue, clearUpcoming, moveInQueue } = useMusicQueue();
   const visible = queue.entries.slice(Math.max(queue.currentIndex, 0));
   const upcomingCount = Math.max(queue.entries.length - queue.currentIndex - 1, 0);
 
@@ -28,13 +28,13 @@ export default function MusicQueueScreen() {
     <MusicQueueItem
       entry={item}
       current={index === 0}
-      canMoveUp={index > 1}
-      canMoveDown={index > 0 && index < visible.length - 1}
+      canMoveUp={!shuffleEnabled && index > 1}
+      canMoveDown={!shuffleEnabled && index > 0 && index < visible.length - 1}
       onPlay={jumpToQueueEntry}
       onMove={moveInQueue}
       onRemove={removeFromQueue}
     />
-  ), [jumpToQueueEntry, moveInQueue, removeFromQueue, visible.length]);
+  ), [jumpToQueueEntry, moveInQueue, removeFromQueue, visible.length, shuffleEnabled]);
 
   return (
     <FlatList
@@ -64,6 +64,7 @@ export default function MusicQueueScreen() {
               <Button variant="outline" size="small" onPress={confirmClear}>Clear upcoming</Button>
             )}
           </View>
+          {shuffleEnabled && <Text style={styles.hint}>Turn off Shuffle in Now Playing to reorder upcoming songs.</Text>}
         </View>
       }
       ListEmptyComponent={
@@ -91,6 +92,7 @@ const styles = StyleSheet.create({
   title: { ...typography.h1, color: colors.foreground },
   summary: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
   count: { ...typography.label, color: colors.muted },
+  hint: { ...typography.muted, color: colors.muted },
   separator: { height: spacing.sm },
   empty: { flex: 1, justifyContent: "center", alignItems: "center", gap: spacing.lg },
   emptyTitle: { ...typography.h2, color: colors.foreground, textAlign: "center" },

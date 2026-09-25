@@ -1,9 +1,11 @@
 import type { MusicTrack } from "@/src/features/music/types";
+import { shuffledTracks } from "@/src/features/music/utils/shuffleTracks";
 
 export type QueueEntry = { id: number; track: MusicTrack };
 export type PlaybackQueue = { entries: QueueEntry[]; currentIndex: number };
 
 export const emptyPlaybackQueue: PlaybackQueue = { entries: [], currentIndex: -1 };
+export type RepeatMode = "off" | "all" | "one";
 
 export function currentQueueEntry(queue: PlaybackQueue): QueueEntry | null {
   return queue.entries[queue.currentIndex] ?? null;
@@ -30,6 +32,33 @@ export function stepQueue(queue: PlaybackQueue, direction: -1 | 1): PlaybackQueu
   const nextIndex = queue.currentIndex + direction;
   if (nextIndex < 0 || nextIndex >= queue.entries.length) return queue;
   return { ...queue, currentIndex: nextIndex };
+}
+
+export function shuffleUpcoming(queue: PlaybackQueue, random: () => number = Math.random): PlaybackQueue {
+  if (queue.currentIndex < 0 || queue.currentIndex >= queue.entries.length - 2) return queue;
+  const split = queue.currentIndex + 1;
+  return { ...queue, entries: [...queue.entries.slice(0, split), ...shuffledTracks(queue.entries.slice(split), random)] };
+}
+
+export function restoreUpcoming(queue: PlaybackQueue, originalIds: number[]): PlaybackQueue {
+  if (queue.currentIndex < 0) return queue;
+  const rank = new Map(originalIds.map((id, index) => [id, index]));
+  const split = queue.currentIndex + 1;
+  const upcoming = queue.entries.slice(split).sort((a, b) =>
+    (rank.get(a.id) ?? Number.MAX_SAFE_INTEGER) - (rank.get(b.id) ?? Number.MAX_SAFE_INTEGER));
+  return { ...queue, entries: [...queue.entries.slice(0, split), ...upcoming] };
+}
+
+export function nextQueueForMode(queue: PlaybackQueue, repeat: RepeatMode, shuffle: boolean): PlaybackQueue {
+  if (queue.currentIndex < 0) return queue;
+  if (repeat === "one") return queue;
+  const stepped = stepQueue(queue, 1);
+  if (stepped !== queue || repeat !== "all") return stepped;
+  if (!shuffle || queue.entries.length < 2) return { ...queue, currentIndex: 0 };
+  const last = currentQueueEntry(queue)?.id;
+  const entries = shuffledTracks(queue.entries);
+  if (entries[0].id === last) [entries[0], entries[1]] = [entries[1], entries[0]];
+  return { entries, currentIndex: 0 };
 }
 
 export function selectQueueEntry(queue: PlaybackQueue, id: number): PlaybackQueue {

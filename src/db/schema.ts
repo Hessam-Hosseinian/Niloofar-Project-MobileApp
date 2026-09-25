@@ -153,6 +153,8 @@ CREATE TABLE IF NOT EXISTS music_tracks (
   fingerprint TEXT UNIQUE,
   favorite INTEGER NOT NULL DEFAULT 0,
   play_count INTEGER NOT NULL DEFAULT 0,
+  resume_seconds REAL NOT NULL DEFAULT 0,
+  lyrics_text TEXT,
   hidden INTEGER NOT NULL DEFAULT 0,
   missing INTEGER NOT NULL DEFAULT 0,
   created_at TEXT NOT NULL,
